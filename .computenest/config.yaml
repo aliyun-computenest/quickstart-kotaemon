@@ -1,0 +1,88 @@
+Service:
+  RegionId: cn-hangzhou
+  DeployType: ros
+  DeployMetadata:
+    SupplierDeployMetadata:
+      ArtifactRelation:
+        centos_7:
+          ArtifactId: ${Artifact.Artifact.ArtifactId}
+          ArtifactVersion: ${Artifact.Artifact.ArtifactVersion}
+    TemplateConfigs:
+      - Name: 模板1
+        Url: ros_templates/template.yaml
+        AllowedRegions:
+          - cn-beijing
+          - cn-hangzhou
+          - cn-heyuan
+        PredefinedParameters: []
+        DeployScene: ECS
+        OutputConfigs:
+          - OutputKey: __biubiu__
+            EnableWebProxy: false
+    NetworkMetadata:
+      EnablePrivateVpcConnection: false
+      EnableReversePrivateVpcConnection: false
+    ServiceInstanceNameRule:
+      UseDefaultValue: false
+  OperationMetadata:
+    SupportBackup: false
+    PrometheusConfigMap:
+      模板1:
+        EnablePrometheus: false
+  ServiceType: private
+  ServiceInfo:
+    - Agreements: []
+      Image: resources/icons/service_logo.jpg
+      Locale: zh-CN
+      Name: kotaemon社区版
+      ShortDescription: Kotaemon是功能性 RAG UI，适用于想要对其文档进行 QA 的最终用户和想要构建自己的 RAG 管道的开发人员。
+      Softwares: []
+  ShareType: Public
+  ApprovalType: Manual
+Artifact:
+  Artifact:
+    ArtifactType: EcsImage
+    ArtifactName: kotaemon
+    Description: kotaemon
+    ArtifactProperty:
+      RegionId: ${ImageBuilder.EcsImage.RegionId}
+      ImageId: ${ImageBuilder.EcsImage.SourceImageId}
+ImageBuilder:
+  EcsImage:
+    RegionId: ap-southeast-1
+    SourceImageId: ubuntu_24_04_x64_20G_alibase_20250317.vhd
+    SystemDiskSize: 40
+    InstanceType: ecs.c6.large
+    InternetMaxBandwidthOut: 10
+    CommandType: RunShellScript
+    Timeout: 10800
+    Tags: [ ]
+    CommandContent: |-
+        # 安装docker-ce
+        apt-get update
+        apt-get -y install apt-transport-https ca-certificates curl software-properties-common
+        curl -fsSL http://mirrors.cloud.aliyuncs.com/docker-ce/linux/ubuntu/gpg | apt-key add -
+        add-apt-repository -y "deb [arch=$(dpkg --print-architecture)] http://mirrors.cloud.aliyuncs.com/docker-ce/linux/ubuntu $(lsb_release -cs) stable"
+        apt-get -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+        sudo systemctl enable --now docker.service
+
+        git clone https://github.com/kotaemon-ai/kotaemon.git
+        cd /root/kotaemon
+        cat > .env << EOF
+        version: '3.8'
+        services:
+          kotaemon:
+            image: ghcr.io/cinnamon/kotaemon:main-full
+            container_name: kotaemon
+            environment:
+              - GRADIO_SERVER_NAME=0.0.0.0
+              - GRADIO_SERVER_PORT=7860
+            volumes:
+              - ./ktem_app_data:/app/ktem_app_data
+            ports:
+              - "7860:7860"
+            stdin_open: true
+            tty: true
+            restart: always
+        EOF
+        docker compose up -d
