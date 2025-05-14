@@ -68,7 +68,7 @@ ImageBuilder:
 
         git clone https://github.com/kotaemon-ai/kotaemon.git
         cd /root/kotaemon
-        cat > .env << EOF
+        cat > docker-compose.yaml << EOF
         version: '3.8'
         services:
           kotaemon:
